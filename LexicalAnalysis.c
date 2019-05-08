@@ -31,7 +31,8 @@ TERMINAL nextToken()
 	token.tokenVal.number=0;
 	tokenLen=0;
 	for (c=ReadAChar(sFile);c!=0;c=ReadAChar(sFile))
-	{	tokenStr[tokenLen++]=c;    // 记录读入符号的数组，最大由MAXTOKENLEN决定，为256
+	{	tokenStr[tokenLen]=c;    // 记录读入符号的数组，最大由MAXTOKENLEN决定，为256
+	    tokenLen++;
 		if (tokenLen>=MAXTOKENLEN)
 		{	printf("Token is too long! it limitted to %d \n", MAXTOKENLEN);
 			break;
@@ -52,7 +53,7 @@ TERMINAL nextToken()
 			state=LexTable[state][LEX_DIGIT];
 		else if ((c>='a' && c<='z')||(c>='A' && c<='Z')||(c=='_'))
 			state=LexTable[state][LEX_LETTER_];
-		else if (c=='(' || c==')' || c=='{' || c=='}' || c==',' || c==';')
+		else if (c=='(' || c==')' || c=='{' || c=='}' || c==',' || c==';' || c=='[' || c==']'  )
 			state=LexTable[state][LEX_SYMBOL];
 		else
 		{	printf("Unknown symbol: %c\n",c);
@@ -63,7 +64,7 @@ TERMINAL nextToken()
 		if (state<100) continue;
 		if (state>100 && state<200)
 		{	prebuf=c;      // 此时为多读的字符，存放在prebuf中
-			tokenLen--;    // 不算多读的字符
+			tokenLen--;    // id字符串中不算多读的字符
 		}
 		switch (state)     // 词法分析的输出
 		{	case 101: token.token=FoundRELOOP();
@@ -103,6 +104,8 @@ TERMINAL nextToken()
 					  else if (tokenStr[0]=='}') token.token=SYN_BRACE_R;
 					  else if (tokenStr[0]==',') token.token=SYN_COMMA;
 					  else if (tokenStr[0]==';') token.token=SYN_SEMIC;
+					  else if (tokenStr[0]=='[') token.token=SYN_SQUARE_BRACKETS_L;
+					  else if (tokenStr[0]==']') token.token=SYN_SQUARE_BRACKETS_R;
 					  break;
 			default: break;
 		}
@@ -135,14 +138,14 @@ static int FoundRELOOP()
 {
 	if (tokenStr[0]=='<' && tokenStr[1]!='=') return(SYN_LT);
 	else if (tokenStr[0]=='<' && tokenStr[1]=='=') { prebuf=0; return(SYN_LE); }
-	else if (tokenStr[0]=='>' && tokenStr[1]!='=') return(SYN_GT);
+	else if (tokenStr[0]=='>' && tokenStr[1]!='=') { prebuf=0;return(SYN_GT);}
 	else if (tokenStr[0]=='>' && tokenStr[1]=='=') { prebuf=0; return(SYN_GE); }
-	else if (tokenStr[0]=='=' && tokenStr[1]!='=') return(SYN_SET);
-	else if (tokenStr[0]=='=' && tokenStr[1]=='=') return(SYN_EQ);
-	else if (tokenStr[0]=='!' && tokenStr[1]!='=') return(SYN_NOT);
-	else if (tokenStr[0]=='!' && tokenStr[1]=='=') return(SYN_NE);
-	else if (tokenStr[0]=='&' && tokenStr[1]=='&') return(SYN_AND);
-	else if (tokenStr[0]=='|' && tokenStr[1]=='|') return(SYN_OR);
+	else if (tokenStr[0]=='=' && tokenStr[1]!='=') {prebuf=0;return(SYN_SET);}
+	else if (tokenStr[0]=='=' && tokenStr[1]=='=') {prebuf=0;return(SYN_EQ);}
+	else if (tokenStr[0]=='!' && tokenStr[1]!='=') {prebuf=0;return(SYN_NOT);}
+	else if (tokenStr[0]=='!' && tokenStr[1]=='=') {prebuf=0;return(SYN_NE);}
+	else if (tokenStr[0]=='&' && tokenStr[1]=='&') {prebuf=0;return(SYN_AND);}
+	else if (tokenStr[0]=='|' && tokenStr[1]=='|') {prebuf=0;return(SYN_OR);}
 	else return(ERR);
 }
 

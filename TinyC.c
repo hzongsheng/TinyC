@@ -6,6 +6,7 @@ FILE *sFile;
 
 int main(int argc, char* argv[])
 {
+
 //    sFile=fopen_s(argv[1],"r");
     sFile=fopen("test1.txt","rt");
 	SyntaxAnalysis();

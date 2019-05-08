@@ -1,6 +1,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "constvar.h"
+#include<string.h>
 
 extern TERMINAL nextToken();
 extern void renewLex();
@@ -34,21 +35,58 @@ static int curtoken_num;
 static char curtoken_str[MAXTOKENLEN];
 static IDTABLE *IDTHead=NULL;
 static int run_status=1;	//0；程序不执行；1:程序正常执行；2:跳过当前结构后继续执行
+static char printCharList[62][10];//用于将token对应的整数转换为相应的字符
+
+void initPrintCharList(){ //初始化printCharList数组
+	strcpy(printCharList[1], " int");
+	strcpy(printCharList[2]," id");
+	strcpy(printCharList[11]," <");
+	strcpy(printCharList[12]," >");
+	strcpy(printCharList[13]," <=");
+	strcpy(printCharList[14]," >=");
+	strcpy(printCharList[15]," ==");
+	strcpy(printCharList[16]," !=");
+	strcpy(printCharList[17]," +");
+	strcpy(printCharList[18]," -");
+	strcpy(printCharList[19]," *");
+	strcpy(printCharList[20]," /");
+	strcpy(printCharList[21]," (");
+	strcpy(printCharList[22]," )");
+	strcpy(printCharList[23]," {");
+	strcpy(printCharList[24]," }");
+	strcpy(printCharList[25]," ,");
+	strcpy(printCharList[26]," ;");
+	strcpy(printCharList[27]," =");
+	strcpy(printCharList[28]," [");
+	strcpy(printCharList[29]," ]");
+	strcpy(printCharList[51]," &&");
+	strcpy(printCharList[52]," ||");
+	strcpy(printCharList[53]," !");
+	strcpy(printCharList[54]," TRUE");
+	strcpy(printCharList[55]," FALSE");
+	strcpy(printCharList[56]," int");
+	strcpy(printCharList[57]," char");
+	strcpy(printCharList[58]," if");
+	strcpy(printCharList[59]," else");
+	strcpy(printCharList[60]," while");
+	strcpy(printCharList[61]," show");
+	return;
+}
 
 void SyntaxAnalysis()
 {
-
+initPrintCharList();
 #if defined(AnaTypeLex)
 //testing lexical analysis
 	TERMINAL token;
 	token=nextToken();
 	while (token.token!=ERR)
 	{	if (token.token==SYN_NUM)
-			printf("LEX: %d,%d\n",token.token,token.tokenVal.number);
+			printf("LEX: %d,   %d\n",token.token,token.tokenVal.number);
 		else if (token.token==SYN_ID)
-			printf("LEX: %d,%s\n",token.token,token.tokenVal.str);
+			printf("LEX: %d,   %s\n",token.token,token.tokenVal.str);
 		else
-			printf("LEX: %d\n",token.token);
+			printf("LEX: %d, %s\n",token.token, printCharList[token.token]);
 		token=nextToken();
 	}
 #else
