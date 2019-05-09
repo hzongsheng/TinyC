@@ -1,13 +1,13 @@
 main()
-{ //int i,j,k;
+{ int i,j=9,k;
+  char c;
   //test
   /*this is a test*/
-  //i=1; j=2;k=8;
-  if(i == j){show(i+j);}[else {show(i-j);}];
+  i= 9;j=2;k=8;
+  if(i == j){show(i+j);}else {show(i-j);};
   if(i >= k && k != 0 || j == i){show(k);};
-  -i;
-  *
-  if(TRUE){show(i*j);}[else {show(j/i);}];
-  while(i  != j){show(i);};
+  if(!TRUE || !FALSE){show(i*j);{else {show(j/i);};
+  if(!( i<=j || FALSE)){i = j;}
+  while(i  != j){show((i * j )/k + j);};
   show(i+j+k);
 }

@@ -122,6 +122,7 @@ static int strcompare(char *sstr, char *tstr)
 }
 
 static IDTABLE* InstallID()
+/* 为curtoken_str在IDTHead链表中建立相关的id符号表新的条目 */
 {
 	IDTABLE *p,*q;
 	char *a,*b;
@@ -132,15 +133,16 @@ static IDTABLE* InstallID()
 		p=p->next;
 	}
 	if (p!=NULL)
-		return(NULL);
-	else
+		return(NULL);//curtoken_str 已经存在,返回NULL
+	else             //curtoken_str 条目不存在，建立新的条目
 	{
 		p=(IDTABLE*)malloc(sizeof(IDTABLE));
-		if (q==NULL)
+		if (q==NULL)// 初始化
 			IDTHead=p;
-		else
+		else        // 添加新的节点 
 			q->next=p;
-		p->next=NULL;
+		p->next=NULL;// 下一个为NULL
+		/*为新的条目添加内容*/
 		for (a=curtoken_str,b=p->name;(*b=*a)!='\0';a++,b++);
 		return(p);
 	}
@@ -219,7 +221,7 @@ static int Prod_S()
 	EXPVAL exp;
 	int bval;
 	if (lookahead.token==SYN_INT || lookahead.token==SYN_CHAR)
-	{
+	{  // S --> D S ; D --> T id[=E] L;
 		#if defined(AnaTypeSyn)
 		printf("SYN: S-->D S\n");
 		#endif
@@ -227,7 +229,7 @@ static int Prod_S()
 		Prod_S();
 	}
 	else if (lookahead.token==SYN_ID)
-	{
+	{   // S --> A S ; A --> id=E;
 		#if defined(AnaTypeSyn)
 		printf("SYN: S-->A S\n");
 		#endif
@@ -235,7 +237,7 @@ static int Prod_S()
 		Prod_S();
 	}
 	else if (lookahead.token==SYN_SHOW)
-	{
+	{   // S-->show(E); S
 		#if defined(AnaTypeSyn)
 		printf("SYN: S-->show(E); S\n");
 		#endif
@@ -252,7 +254,7 @@ static int Prod_S()
 		Prod_S();
 	}
 	else if (lookahead.token==SYN_IF)
-	{
+	{   //SYN: S-->if (B) {S} [else {S}] S
 		#if defined(AnaTypeSyn)
 		printf("SYN: S-->if (B) {S} [else {S}] S");
 		#endif
@@ -277,7 +279,7 @@ static int Prod_S()
 		Prod_S();
 	}
 	else if (lookahead.token==SYN_WHILE)
-	{
+	{   //SYN: S-->while(B) {S} S
 		#if defined(AnaTypeSyn)
 		printf("SYN: S-->while(B) {S} S\n");
 		#endif
@@ -299,7 +301,7 @@ static int Prod_S()
 		Prod_S();
 	}
 	else
-	{
+	{   // S --> empty
 		#if defined(AnaTypeSyn)
 		printf("SYN: S--> \n");
 		#endif

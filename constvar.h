@@ -24,6 +24,7 @@ typedef struct expValue{
 	EXPVALUE val;
 } EXPVAL;
 
+//id符号链表
 typedef struct idNode{
 	char name[MAXTOKENLEN];
 	int type;
@@ -65,8 +66,6 @@ static int LexTable[6][8]=
 #define SYN_COMMA	25		// ,
 #define SYN_SEMIC	26		// ;
 #define SYN_SET		27		// =
-#define SYN_SQUARE_BRACKETS_L 28      // [
-#define SYN_SQUARE_BRACKETS_R 29      // ]
 #define SYN_AND		51		// &&
 #define SYN_OR		52		// ||
 #define SYN_NOT		53		// !
@@ -78,39 +77,7 @@ static int LexTable[6][8]=
 #define SYN_ELSE	59		// else
 #define SYN_WHILE	60		// while
 #define SYN_SHOW	61		// show
-/*
-static char printCharList[62][10];
-strcpy(printCharList[1], " int");
-strcpy(printCharList[2]," id");
-strcpy(printCharList[11]," <");
-strcpy(printCharList[12]," >");
-strcpy(printCharList[13]," <=");
-strcpy(printCharList[14]," >=");
-strcpy(printCharList[15]," ==");
-strcpy(printCharList[16]," !=");
-strcpy(printCharList[17]," +");
-strcpy(printCharList[18]," -");
-strcpy(printCharList[19]," *");
-strcpy(printCharList[20]," /");
-strcpy(printCharList[21]," (");
-strcpy(printCharList[22]," )");
-strcpy(printCharList[23]," {");
-strcpy(printCharList[24]," }");
-strcpy(printCharList[25]," ,");
-strcpy(printCharList[26]," ;");
-strcpy(printCharList[27]," =");
-strcpy(printCharList[51]," &&");
-strcpy(printCharList[52]," ||");
-strcpy(printCharList[53]," !");
-strcpy(printCharList[54]," TRUE");
-strcpy(printCharList[55]," FALSE");
-strcpy(printCharList[56]," int");
-strcpy(printCharList[57]," char");
-strcpy(printCharList[58]," if");
-strcpy(printCharList[59]," else");
-strcpy(printCharList[60]," while");
-strcpy(printCharList[61]," show");
-*/
+
 //用于符号表中类型
 #define ID_FUN		1		// 函数类型
 #define ID_INT		2		// int类型
