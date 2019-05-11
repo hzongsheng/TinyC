@@ -1,14 +1,16 @@
 
 
-#define AnaTypeLex	1
-//#define AnaTypeSyn	1
+//#define AnaTypeLex	1
+#define AnaTypeSyn	1
 #define MAXTOKENLEN	256
 
+//词法分析
 typedef union {
 	int number;
 	char *str;
 } TOKENVAL;
 
+//语法分析
 typedef struct {
 	int token;
 	TOKENVAL tokenVal;
@@ -23,6 +25,11 @@ typedef struct expValue{
 	int type;
 	EXPVALUE val;
 } EXPVAL;
+
+typedef struct map{
+	int key;
+	int value;
+}MAP;
 
 //id符号链表
 typedef struct idNode{
@@ -49,6 +56,7 @@ static int LexTable[6][8]=
 #define ERR			-1
 #define SYN_NUM		1		// int整数
 #define SYN_ID		2		// id
+#define SYN_LETTER  3       //char型值
 #define SYN_LT		11		// <
 #define SYN_GT		12		// >
 #define SYN_LE		13		// <=
@@ -66,19 +74,23 @@ static int LexTable[6][8]=
 #define SYN_COMMA	25		// ,
 #define SYN_SEMIC	26		// ;
 #define SYN_SET		27		// =
+#define SYN_QUO     28      //'
+#define SYN_D_QUO   29      //"
 #define SYN_AND		51		// &&
 #define SYN_OR		52		// ||
 #define SYN_NOT		53		// !
 #define SYN_TRUE	54		// TRUE
 #define SYN_FALSE	55		// FALSE
-#define SYN_INT		56		// int
-#define SYN_CHAR	57		// char
+#define SYN_INT		56		// int变量
+#define SYN_CHAR	57		// char型变量
 #define SYN_IF		58		// if
 #define SYN_ELSE	59		// else
 #define SYN_WHILE	60		// while
 #define SYN_SHOW	61		// show
 
-//用于符号表中类型
+//用于符号表中类型type,EXPVAL.type
 #define ID_FUN		1		// 函数类型
 #define ID_INT		2		// int类型
 #define ID_CHAR		3		// char类型
+#define NUM         4       //int型常量
+#define LETTER      5       //char型常量

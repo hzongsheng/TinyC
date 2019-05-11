@@ -1,5 +1,6 @@
 #include "stdio.h"
 #include "constvar.h"
+#include<stdlib.h>
 
 #define LEX_RELOOP	0
 #define LEX_DELIM	1
@@ -21,6 +22,29 @@ extern FILE *sFile;
 static char prebuf=0;	//buffer to store the pre-read character
 static char tokenStr[MAXTOKENLEN];	//token buffer
 static int tokenLen;
+int row = 1, col = 0;
+MAP escapeList[10];  //用于转义字符查询
+int LEN_ESCAPE = 0;
+
+
+void initEscapeList(){
+  escapeList[0].key='a';
+  escapeList[0].value='\a';
+  escapeList[1].key='b';
+  escapeList[1].value='\b';
+  escapeList[2].key='f';
+  escapeList[2].value='\f';
+  escapeList[3].key='n';
+  escapeList[3].value='\n';
+  escapeList[4].key='r';
+  escapeList[4].value='\r';
+  escapeList[5].key='t';
+  escapeList[5].value='\t';
+  escapeList[6].key='v';
+  escapeList[6].value='\v';
+  LEN_ESCAPE = 6 + 1;
+}
+
 
 TERMINAL nextToken()
 {
@@ -53,7 +77,7 @@ TERMINAL nextToken()
 			state=LexTable[state][LEX_DIGIT];
 		else if ((c>='a' && c<='z')||(c>='A' && c<='Z')||(c=='_'))
 			state=LexTable[state][LEX_LETTER_];
-		else if (c=='(' || c==')' || c=='{' || c=='}' || c==',' || c==';')
+		else if (c=='(' || c==')' || c=='{' || c=='}' || c==',' || c==';' || c=='\'')
 			state=LexTable[state][LEX_SYMBOL];
 		else
 		{	printf("Unknown symbol: %c\n",c);
@@ -89,7 +113,7 @@ TERMINAL nextToken()
 					  state=0; tokenLen=0;
 					  continue;
 			case 202: c=ReadAChar(sFile);
-					  while (!feof(sFile) && ((d=ReadAChar(sFile))!='/' || c!='*'))
+					  while (!feof(sFile) && !( c=='*' && (d=ReadAChar(sFile))=='/' ) )
 						  c=d;
 					  state=0; tokenLen=0;
 					  continue;
@@ -104,9 +128,37 @@ TERMINAL nextToken()
 					  else if (tokenStr[0]=='}') token.token=SYN_BRACE_R;
 					  else if (tokenStr[0]==',') token.token=SYN_COMMA;
 					  else if (tokenStr[0]==';') token.token=SYN_SEMIC;
+					  else if (tokenStr[0]=='\'')
+					       {    int temp;
+						        token.token=SYN_LETTER;
+								temp = (int)ReadAChar(sFile);
+								/* 处理转义符号例如\n */
+								if(temp != '\\')
+								    token.tokenVal.number = temp;
+								else{
+                                    temp = (int)ReadAChar(sFile);
+									int i;
+									for(i = 0; i < LEN_ESCAPE; i++){
+										if(escapeList[i].key==temp){
+											token.tokenVal.number = escapeList[i].value;
+											break;
+										}
+									}
+									if(i == LEN_ESCAPE){//没有这种转义
+									    token.tokenVal.number = temp;
+										printf("sorry, we are not support escape of '%c', we will treat this as a single normal letter\n",temp);
+									};
+								}
+								/* 字符表达形式错误 */
+								if(ReadAChar(sFile) != '\''){
+									printf("Error: lost a ' at row: %d, col: %d\n",row,col);
+									exit(0);
+								}
+								
+						   }
 					  break;
 			default: break;
-		}
+		}//end of switch
 		break;
 	}
 	return(token);
@@ -129,6 +181,11 @@ static char ReadAChar(FILE *sFile)
 		c=fgetc(sFile);
 	else
 		c=0;
+	if(c == '\n'){//便于输出错误的位置
+		row++;
+		col = 0;
+	}
+	col++;
 	return(c);
 }
 

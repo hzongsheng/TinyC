@@ -1,6 +1,6 @@
 [TOC]
 
-# 代码阅读笔记
+# TinyC代码阅读笔记
 ***
 ## Explaination of Syntax Expressions
    * **函数由main(){S}基本结构组成**
@@ -32,6 +32,13 @@
          - !var1
       * 布尔表达式F_B 通过布尔运算符&&, ||,连接形成的表达式
          - var1 != var2 || !BExp && TRUE
+      * 结构：
+             B
+      |    |    |     |
+      TB || TB || TB  ||  B1...
+    |    |    |
+    F && F && F 空...
+      
    * **基本元素 F**
       * 数字,num 由且仅由0~9组成
          - 0
@@ -53,6 +60,7 @@ nextToken=>operation: nextToken()
 
 st->nextToken->SyntaxAnalysis->e
 ```
+
    * 语法分析
 ```flow
 ​```flow
@@ -67,15 +75,102 @@ st->SyntaxAnalysis->nextToken->Prod_FUNC
 Prod_FUNC(yes)->FreeExit->e
 Prod_FUNC(no)->e
 ```
+   * Prod_FUNC
+```flow
+​```flow
+st=>start: Prod_FUNC( )
+end=>end: return
+matain=>operation: maintain:
+                   符号表IDTHead
+                   curtoken_num
+                   curtoken_str[ ]
+installid=>operation: InstallID( )
+                      建立当前符号在符号表中的项
+installid
+st->matain->installid->end
+```
 ## Explanation of the Data-Structer
    > TERMINAL:终结符
    * token: 为每一个符号都指定的int值，定义在constvar.h 中
    * tokenvalue: 存放具体的数字值或者字符值
-   > nexttoken:   
+
+   > EXPVAL: 表达式值
+   * int type: 记录表达式值的类型，int，char
+   * EXPVALUE val: 记录相应的值
+
+## Explanation of Static Values
+   > run_status: 
+   * 0 程序不执行
+   * 1 程序正常执行
+   * 2 跳过当前结构继续执行
+   * 初始化为1
+   * 作用：通过已知的status结合当前的条件决定下一步要执行的动作为继续执行,还是不执行,或者是跳过本单元继续执行，实现控制流语句。
+
+   > curtoken_num curtoken_str[]:
+   * 表示当前分析的token的int型值或者char值
+   * 在每次移动token，即执行match函数时，更新此两个值
+
+## Usage of Variable Value in Functions
+   > Prod_D:
+   * type: 
+      记录产生式 D --> T id [=E] L中T的类型(char, int)
+   * exp:
+      记录赋值的值,int型的，char型的
+
+   > match:  
+   * 用途:  匹配一个符号，当此符号为id或者num时将当前的token赋值为此符号,用于建立符号表表项
+   然后lookahead向前移动为下一个token
+##　Functions
+   > Prod_F
+   * 无需参数
+   * 返回EXPVAL型的值
+
+   > Prod_TE1:执行乘除运算
+   * int或者char型被乘数的值， 或者被除数的值
+   * 返回 乘除运算后的值或者原值
+   * 当其中至少一个为int时，将返回两个值的int型值相乘，相除的结果
+   * 当两个均为char时，返回ascaii码相乘，相除结果
+
+   > Prod_E1:执行加减运算
+   * int或者char型被加数的值，或者被减数的值
+   * 返回 运算后的值或者原值
+   * 功能同Prod_TE1
+   * ......
+
+   > Prod_TB1: 执行 &&　与运算
+   * 
+   > Prod_B1: 
 
 ## problems record
 
    > 由两个符号组成的关系运算符解释不正确:输出整个关系运算符后，又将后一个运算符输出
    * 解决方法: 简单地将FindRELoop中将所有的prebuf赋值为0。即判断为两个符号组成的关系运算符后, 下一次开始读取分析的符号位置为prebuf的后一个字符。而当判断为单个字符所组成的运算符后，下一个分析的位置的字符应该为prebuf所记录的字符，不应该调用ReadAChar中的fgetc()函数，所以置prebuf为0
+
    > 单个字符构成的运算符后丢失一个符号: 例如!FALSE 分析后变为符号! 和 id ALSE
    * 将FindRELoop中判断SYN_NOT的语句的prebuf赋值语句删去。错误原因为未能注意到单字符组成的运算符，解决方法的原理在前一条已经解释过。
+  
+   > Prod_D()出现segmentFault错误
+   * 由于当当前token已经存在于符号表中的时候，调用函数InstallID()返回NULL，所以需要加判断,为NULL时，返回不能重复定义的消息
+
+   > 增加对char的支持
+   >> 词法部分
+   * 在sysmbol中增加符号类型英文单引号" ' "，在nextToken函数中symbol判断中增加此类型
+   * 增加判断出 ' 后处于状态205的处理，读入下一个字符作为具体值，当作int存入token.tokenVal.number中，再读如下一个 ' ,如果不是' 抛出错误。否则输出letter类型符号结果，
+
+   >> 语法部分
+   * 修改Prod_F函数中对char数据的处理
+   * 赋值语句中对char型值的处理(其实没有要处理的)
+   * 增加对char型变量的算术运算(无需改动)
+   * 增加对char型变量的逻辑运算(无需改动)
+   * 增加show语句对char的支持(无需改动)
+   * 。。。。。。增加强制转换
+   
+   >> show语句未能打印出变量值，表达式的type为一个随机数 
+   * Prod_D 和 Prod_L 对建立ID表项后未添加type
+
+   > 。。。。。布尔表达式无法用()表达优先级
+   * 修改文法F --> id | num | (E)为：F --> id | num | (E) | (B)
+   * 通过修改此文法，可以同时引入两个新的特性：
+      * 布尔表达式可以通过 '()'表达更高的优先级，此后优先级顺序由低到高为'||', '&&', '()'
+      * 布尔表达式可以参与算术运算，通过判断将布尔表达式TRUE当作1，FALSE当作0，参与到算术运算
+      * 
