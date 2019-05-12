@@ -5,14 +5,15 @@
 
 extern TERMINAL nextToken();
 extern void renewLex();
-extern void initEscapeList();//escapeÊı×é¶¨Òå
+extern void initEscapeList();
 static int match (int t);
-static int strcompare(char *sstr, char *tstr);	//±È½ÏÁ½¸ö´®
-static IDTABLE* InstallID();		//ÔÚ·ûºÅ±íÖĞÎªcurtoken_str½¨Á¢Ò»¸öÌõÄ¿
-static IDTABLE* LookupID();			//ÔÚ·ûºÅ±íÖĞ²éÕÒcurtoken_str
+static int strcompare(char *sstr, char *tstr);	
+static IDTABLE* InstallID();		
+static IDTABLE* LookupID();			
 static void FreeExit();
-static int cast2int(EXPVAL exp);		//½«expµÄÖµ×ª»»ÎªintÀàĞÍ
-static char cast2char(EXPVAL exp);		//½«expµÄÖµ×ª»»ÎªcharÀàĞÍ
+static int cast2int(EXPVAL exp);		
+static char cast2char(EXPVAL exp);		
+static EXPVAL calculateExp(EXPVAL val1, int calop,EXPVAL val2);
 static int Prod_FUNC();
 static int Prod_S();
 static int Prod_D();
@@ -35,11 +36,11 @@ static TERMINAL lookahead;
 static int curtoken_num;
 static char curtoken_str[MAXTOKENLEN];
 static IDTABLE *IDTHead=NULL;
-static int run_status=1;	//0£»³ÌĞò²»Ö´ĞĞ£»1:³ÌĞòÕı³£Ö´ĞĞ£»2:Ìø¹ıµ±Ç°½á¹¹ºó¼ÌĞøÖ´ĞĞ
-static char printCharList[62][10];//´Ê·¨·ÖÎö£¬ÓÃÓÚ½«token¶ÔÓ¦µÄÕûÊı×ª»»ÎªÏàÓ¦µÄ×Ö·û
+static int run_status=1;	//0é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·æ‰§é”Ÿå«ï½æ‹·1:é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·æ‰§é”Ÿå«ï½æ‹·2:é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·å‰é”Ÿç»“æ„é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·é”Ÿè¡—è¾¾æ‹·é”Ÿï¿½
+static char printCharList[62][10];//é”Ÿç»å‡¤æ‹·é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·é”ŸèŠ‚æ–¤æ‹·tokené”Ÿæ–¤æ‹·åº”é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·è½¬é”Ÿæ–¤æ‹·ä¸ºé”Ÿæ–¤æ‹·åº”é”Ÿæ–¤æ‹·é”Ÿè¡—å‡¤æ‹·
 extern int row, col;
 
-void initPrintCharList(){ //³õÊ¼»¯printCharListÊı×é
+void initPrintCharList(){ //é”Ÿæ–¤æ‹·å§‹é”Ÿæ–¤æ‹·printCharListé”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·
 	strcpy(printCharList[1], " int");
 	strcpy(printCharList[2]," id");
 	strcpy(printCharList[3]," letter");
@@ -106,12 +107,8 @@ initEscapeList();
 }
 
 static int match (int t)
-/* Æ¥ÅäÒ»¸ö·ûºÅ£¬µ±´Ë·ûºÅÎªid»òÕßnumÊ±½«µ±Ç°µÄtoken,
- *¼´curtoken_str,curtoken_num¸³ÖµÎª´Ë·ûºÅ,ÓÃÓÚºóĞøInstallID½¨Á¢·ûºÅ±í±íÏî.
- * È»ºólookaheadÏòÇ°ÒÆ¶¯ÎªÏÂÒ»¸ötoken
- */
 {
-	char *p,*q;//ÓÃÓÚ¸øcurtoken_str¸³Öµ
+	char *p,*q;
 	if (lookahead.token == t)
 	{	if (t==SYN_NUM)
 			curtoken_num=lookahead.tokenVal.number;
@@ -137,39 +134,31 @@ static int strcompare(char *sstr, char *tstr)
 }
 
 static IDTABLE* InstallID()
-/* Îªcurtoken_strÔÚIDTHeadÁ´±íÖĞ½¨Á¢Ïà¹ØµÄid·ûºÅ±íĞÂµÄÌõÄ¿,²¢·µ»Ø´ËÌõÄ¿
- * ÌõÄ¿´æÔÚÔò·µ»ØNULL
- * Ö»ÊÇ½¨Á¢ÁËÏàÓ¦±íÏî£¬¸³ÖµÁËname
- */
 {
 	IDTABLE *p,*q;
 	char *a,*b;
 	p=IDTHead; q=NULL;
 	while (p!=NULL && strcompare(curtoken_str,p->name)==ERR)
-	{//²éÕÒidÌõÄ¿
+	{
 		q=p;
 		p=p->next;
 	}
 	if (p!=NULL)
-		return(NULL);//curtoken_str ÒÑ¾­´æÔÚ,·µ»ØNULL
-	else             //curtoken_str ÌõÄ¿²»´æÔÚ£¬½¨Á¢ĞÂµÄÌõÄ¿
+		return(NULL);
+	else             
 	{
 		p=(IDTABLE*)malloc(sizeof(IDTABLE));
-		if (q==NULL)// ³õÊ¼»¯
+		if (q==NULL)
 			IDTHead=p;
-		else        // Ìí¼ÓĞÂµÄ½Úµã 
+		else       
 			q->next=p;
-		p->next=NULL;// ÏÂÒ»¸öÎªNULL
-		/*ÎªĞÂµÄÌõÄ¿*/
+		p->next=NULL;
 		for (a=curtoken_str,b=p->name;(*b=*a)!='\0';a++,b++);
 		return(p);
 	}
 }
 
 static IDTABLE* LookupID()
-/* ÔÚ·ûºÅ±íÖĞ²éÕÒµ±Ç°token
- * ·µ»Ø±íÏîµÄÖ¸Õë
- */
 {
 	IDTABLE *p;
 	p=IDTHead;
@@ -184,7 +173,6 @@ static IDTABLE* LookupID()
 static void FreeExit()
 {
 	IDTABLE *p,*q;
-	//ÊÍ·ÅÁ´±í¿Õ¼ä
 	p=IDTHead;
 	while ((q=p)!=NULL)
 	{	p=p->next;
@@ -204,19 +192,49 @@ static void FreeExit()
 }
 
 static int cast2int(EXPVAL exp)
-{//·µ»ØintĞÍ±äÁ¿µÄÖµ£¬»òÕßcharĞÍ±äÁ¿×ªintºóµÄÖµ
+{
 	if (exp.type==ID_INT)
 		return(exp.val.intval);
-	else if (exp.type==ID_CHAR)
+	else if (exp.type==ID_CHAR )
 		return((int)(exp.val.charval));
 }
 
 static char cast2char(EXPVAL exp)
-{//·µ»ØcharÖµ£¬»ò×ª»¯intĞÍÖµºó·µ»Ø
-	if (exp.type==ID_INT)
-		return((char)(exp.val.intval));
-	else if (exp.type==ID_CHAR)
-		return(exp.val.charval);
+{
+		return((char)cast2int(exp));
+}
+
+static EXPVAL calculateExp(EXPVAL val1, int calop, EXPVAL val2){
+    int result1 = cast2int(val1);
+		int result = cast2int(val2);
+    switch (calop)
+		{
+		case SYN_ADD: 
+			  result += result1;
+			  break;
+		case SYN_SUB:
+		    result -= result1;
+				break;
+		case SYN_MUL:
+		    result *= result1;
+				break;
+		case SYN_DIV:
+		    result /= result1;
+				break;
+		};
+
+    EXPVAL val;
+		if(val1.type==ID_CHAR && val2.type==ID_CHAR){
+				val.type=ID_CHAR;
+				val.val.charval=(char)result;
+			}
+		else
+			{
+				val.type=ID_INT;
+				val.val.intval=result;
+			}
+
+		return val;
 }
 
 static int Prod_FUNC()
@@ -263,15 +281,15 @@ static int Prod_S()
 		#if defined(AnaTypeSyn)
 		printf("SYN: S-->show(E); S\n");
 		#endif
-		match(SYN_SHOW);
+ 		match(SYN_SHOW);
 		match(SYN_PAREN_L);
-		exp=Prod_E();       
+		exp=Prod_E();
 		match(SYN_PAREN_R);
 		match(SYN_SEMIC);
 		if (run_status==1)
-			if (exp.type==ID_INT)
+			if (exp.type==ID_INT )
 				printf("%d",exp.val.intval);
-			else if (exp.type==ID_CHAR)
+			else if (exp.type==ID_CHAR )
 				printf("%c",exp.val.charval);
 		Prod_S();
 	}
@@ -332,9 +350,9 @@ static int Prod_S()
 }
 
 static int Prod_D()
-{//ÉùÃ÷±äÁ¿£¬¸³Öµ
+{
 //  D --> T id [=E] L | kong
-	int type;//ÓÃÓÚ¼ÇÂ¼ÉùÃ÷µÄ±äÁ¿µÄÀàĞÍ£¬ÓÉProd_F·µ»Ø
+	int type;
 	IDTABLE *p;
 	EXPVAL exp;
 	#if defined(AnaTypeSyn)
@@ -371,7 +389,7 @@ static int Prod_D()
 }
 
 static int Prod_L(int type)
-{//ÓÃÓÚÒ»´ÎĞÔÉùÃ÷±äÁ¿£¬¸³Öµ
+{
 //  L --> ,id[=E] L | kong
 	IDTABLE *p;
 	EXPVAL exp;
@@ -439,7 +457,7 @@ static int Prod_T()
 }
 
 static int Prod_A()
-{//¸³ÖµÓï¾ä
+{
 //  A --> id = E
 	IDTABLE *p;
 	EXPVAL exp;
@@ -474,7 +492,7 @@ static int Prod_B()
 
 static int Prod_B1(int bval1)
 {
-//  B1 --> ¡®||¡¯ TB B1 | ¦Å
+//  B1 --> é”Ÿæ–¤æ‹·||é”Ÿæ–¤æ‹· TB B1 | é”Ÿæ–¤æ‹·
 	int bval2;
 	if (lookahead.token==SYN_OR)
 	{
@@ -533,7 +551,7 @@ static int Prod_TB1(int bval1)
 }
 
 static int Prod_FB()
-{//²¼¶û±í´ïÊ½
+{//é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·å¼
 
 	int bval;
 	EXPVAL val1,val2;
@@ -679,8 +697,8 @@ static EXPVAL Prod_E()
 
 static EXPVAL Prod_E1(EXPVAL val1)
 {
-/* ´«ÈëFµÄÖµ£¬¸ù¾İÏàÓ¦µÄ·ûºÅ½øĞĞ¼Ó¼õÔËËã
- * Í¬Prod_TE1
+/* é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·Fé”Ÿæ–¤æ‹·å€¼é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·åº”é”Ÿä¾¥å‡¤æ‹·é”Ÿè„šæ–¤æ‹·é”Ÿå«åŠ ç¡·æ‹·é”Ÿæ–¤æ‹·é”Ÿæ–¤æ‹·
+ * åŒProd_TE1
  */
 
 	EXPVAL val2,val;
@@ -694,20 +712,7 @@ static EXPVAL Prod_E1(EXPVAL val1)
 		match(SYN_ADD);
 		val2=Prod_TE();
 		if (run_status==1)
-			if (val1.type==ID_INT || val2.type==ID_INT)
-			{
-				val.type=ID_INT;
-				i1=cast2int(val1);
-				i2=cast2int(val2);
-				val.val.intval=i1+i2;
-			}
-			else
-			{
-				val.type=ID_CHAR;
-				c1=cast2char(val1);
-				c2=cast2char(val2);
-				val.val.charval=c1+c2;
-			}
+      val = calculateExp(val1, SYN_ADD, val2);
 		val=Prod_E1(val);
 	}
 	else if (lookahead.token==SYN_SUB)
@@ -718,20 +723,7 @@ static EXPVAL Prod_E1(EXPVAL val1)
 		match(SYN_SUB);
 		val2=Prod_TE();
 		if (run_status==1)
-			if (val1.type==ID_INT || val2.type==ID_INT)
-			{
-				val.type=ID_INT;
-				i1=cast2int(val1);
-				i2=cast2int(val2);
-				val.val.intval=i1-i2;
-			}
-			else
-			{
-				val.type=ID_CHAR;
-				c1=cast2char(val1);
-				c2=cast2char(val2);
-				val.val.charval=c1-c2;
-			}
+		  val = calculateExp(val1, SYN_SUB, val2);
 		val=Prod_E1(val);
 	}
 	else
@@ -757,12 +749,6 @@ static EXPVAL Prod_TE()
 
 static EXPVAL Prod_TE1(EXPVAL val1)
 {
- /*½ÓÊÜ´«ÈëµÄ²ÎÊı£¬¸ù¾İÆäºóµÄ·ûºÅ£¬Ö´ĞĞ²¢·µ»Ø³Ë³ıÔËËãºóµÄÖµ
-  * µ±ÆäÖĞÖÁÉÙÒ»¸öÎªintÊ±£¬½«·µ»ØÁ½¸öÖµµÄintĞÍÖµÏà³ËµÄ½á¹û
-  * µ±Á½¸ö¾ùÎªcharÊ±£¬·µ»ØascaiiÂëÏà³Ë½á¹û
-  * ³ı·¨ÏàÍ¬²Ù×÷
-  */
-
 	EXPVAL val2,val;
 	int i1,i2;
 	char c1,c2;
@@ -774,20 +760,7 @@ static EXPVAL Prod_TE1(EXPVAL val1)
 		match(SYN_MUL);
 		val2=Prod_F();
 		if (run_status==1)
-			if (val1.type==ID_INT || val2.type==ID_INT)
-			{
-				val.type=ID_INT;
-				i1=cast2int(val1);
-				i2=cast2int(val2);
-				val.val.intval=i1*i2;
-			}
-			else
-			{
-				val.type=ID_CHAR;
-				c1=cast2char(val1);
-				c2=cast2char(val2);
-				val.val.charval=c1*c2;//????ASCIIÂëÏà³Ë£¿
-			}
+			val=calculateExp(val1, SYN_MUL, val2);		
 		val=Prod_TE1(val);
 	}
 	else if (lookahead.token==SYN_DIV)
@@ -798,20 +771,7 @@ static EXPVAL Prod_TE1(EXPVAL val1)
 		match(SYN_DIV);
 		val2=Prod_F();
 		if (run_status==1)
-			if (val1.type==ID_INT || val2.type==ID_INT)
-			{
-				val.type=ID_INT;
-				i1=cast2int(val1);
-				i2=cast2int(val2);
-				val.val.intval=i1/i2;
-			}
-			else
-			{
-				val.type=ID_CHAR;
-				c1=cast2char(val1);
-				c2=cast2char(val2);
-				val.val.charval=c1/c2;
-			}
+		  val = calculateExp(val1, SYN_DIV, val2);
 		val=Prod_TE1(val);
 	}
 	else
@@ -821,23 +781,21 @@ static EXPVAL Prod_TE1(EXPVAL val1)
 		#endif
 		val=val1;
 	}
-	return(val);// ¶ÔÓ¦TE1Îªµ¥¶ÀµÄ±í´ïÊ½
+	return(val);
 }
 
 static EXPVAL Prod_F()
 {
-/* ·µ»Øid»òÕßnum»òÕßletter»òÕß±í´ïÊ½µÄEXPVALĞÎÊ½
- *
- */
+
 	EXPVAL val;
-	static IDTABLE *p;  // ÓÃÓÚ²éÕÒidÏàÓ¦µÄ±íÏî
+	static IDTABLE *p;  
 	if (lookahead.token==SYN_NUM)
 	{
 		#if defined(AnaTypeSyn)
 		printf("SYN: F-->num\n");
 		#endif
 		match(SYN_NUM);
-		val.type=ID_INT; ///
+		val.type=ID_INT;
 		val.val.intval=curtoken_num;
 	}
 	else if (lookahead.token==SYN_ID)
@@ -848,26 +806,26 @@ static EXPVAL Prod_F()
 		match(SYN_ID);
 		p=LookupID();
 		if(p==NULL){printf("Error row: %d ,col: %d:  '%s' haven't been defined", row,col,curtoken_str);FreeExit();};
-		val.type=p->type; // char»òÕß int
+		val.type=p->type; 
 		val.val=p->val;
 	}
-	else if (lookahead.token==SYN_PAREN_L)
+	else if(lookahead.token==SYN_PAREN_L)
+	{
+			#if defined(AnaTypeSyn)
+			printf("SYN: F-->(E)\n");
+			#endif
+			match(SYN_PAREN_L);
+			val=Prod_E();
+			match(SYN_PAREN_R);
+  }
+	else if (lookahead.token==SYN_LETTER)
 	{
 		#if defined(AnaTypeSyn)
 		printf("SYN: F-->(B)\n");
 		#endif
-		match(SYN_PAREN_L);
-		val=Prod_E();
-		match(SYN_PAREN_R);
-	}
-	else if(lookahead.token==SYN_LETTER)
-	{
-		#if defined(AnaTypeSyn)
-		printf("SYN: F-->letter\n");
-		#endif
 		match(SYN_LETTER);
-    val.type=ID_CHAR;
-		val.val.charval=(char)curtoken_num;//ÎÒ°ÑcharÖµ´æÔÚcurtoken_numÖĞÊÇÓÉÓÚ±È´æÔÚstrÖĞ±ãÓÚ×ª»»
+		val.type=ID_CHAR;
+		val.val.charval=(char)curtoken_num;
 	}
 	else{
 		printf("Error  row: %d, col: %d:  expect a expression before %s \n", row, col,printCharList[lookahead.token]);

@@ -4,13 +4,13 @@
 #define AnaTypeSyn	1
 #define MAXTOKENLEN	256
 
-//´Ê·¨·ÖÎö
+//è¯æ³•åˆ†æ
 typedef union {
 	int number;
 	char *str;
 } TOKENVAL;
 
-//Óï·¨·ÖÎö
+//è¯­æ³•åˆ†æ
 typedef struct {
 	int token;
 	TOKENVAL tokenVal;
@@ -31,7 +31,7 @@ typedef struct map{
 	int value;
 }MAP;
 
-//id·ûºÅÁ´±í
+//idç¬¦å·é“¾è¡¨
 typedef struct idNode{
 	char name[MAXTOKENLEN];
 	int type;
@@ -39,10 +39,10 @@ typedef struct idNode{
 	struct idNode *next;
 } IDTABLE;
 
-//´Ê·¨·ÖÎöDFA×ª»»±í
+//è¯æ³•åˆ†æDFAè½¬æ¢è¡¨
 static int LexTable[6][8]=
-//  10* ×´Ì¬±íÊ¾½ÓÊÜ×´Ì¬£¬µ«¶à¶ÁÁËÒ»¸ö·ûºÅ£¬ĞèÒª»º´æ
-//  20* ×´Ì¬±íÊ¾½ÓÊÜ×´Ì¬£¬µ«Ã»¶à¶Á·ûºÅ
+//  10* çŠ¶æ€è¡¨ç¤ºæ¥å—çŠ¶æ€ï¼Œä½†å¤šè¯»äº†ä¸€ä¸ªç¬¦å·ï¼Œéœ€è¦ç¼“å­˜
+//  20* çŠ¶æ€è¡¨ç¤ºæ¥å—çŠ¶æ€ï¼Œä½†æ²¡å¤šè¯»ç¬¦å·
  /*  relop  delim    *      /      +|_   digit letter_ symbol*/
    {{   1,   201,   204,     2,     3,     4,     5,   205},  //0
 	{ 101,   101,   101,   101,   101,   101,   101,   101},  //1
@@ -52,11 +52,11 @@ static int LexTable[6][8]=
 	{ 105,   105,   105,   105,   105,     5,     5,   105}}; //5
 
 
-//ÓÃÓÚ´Ê·¨·ÖÎöÊä³ö£¬¼°Óï·¨·ÖÎö
+//ç”¨äºè¯æ³•åˆ†æè¾“å‡ºï¼ŒåŠè¯­æ³•åˆ†æ
 #define ERR			-1
-#define SYN_NUM		1		// intÕûÊı
+#define SYN_NUM		1		// intæ•´æ•°
 #define SYN_ID		2		// id
-#define SYN_LETTER  3       //charĞÍÖµ
+#define SYN_LETTER  3       //charå‹å€¼
 #define SYN_LT		11		// <
 #define SYN_GT		12		// >
 #define SYN_LE		13		// <=
@@ -81,16 +81,14 @@ static int LexTable[6][8]=
 #define SYN_NOT		53		// !
 #define SYN_TRUE	54		// TRUE
 #define SYN_FALSE	55		// FALSE
-#define SYN_INT		56		// int±äÁ¿
-#define SYN_CHAR	57		// charĞÍ±äÁ¿
+#define SYN_INT		56		// intå˜é‡
+#define SYN_CHAR	57		// charå‹å˜é‡
 #define SYN_IF		58		// if
 #define SYN_ELSE	59		// else
 #define SYN_WHILE	60		// while
 #define SYN_SHOW	61		// show
 
-//ÓÃÓÚ·ûºÅ±íÖĞÀàĞÍtype,EXPVAL.type
-#define ID_FUN		1		// º¯ÊıÀàĞÍ
-#define ID_INT		2		// intÀàĞÍ
-#define ID_CHAR		3		// charÀàĞÍ
-#define NUM         4       //intĞÍ³£Á¿
-#define LETTER      5       //charĞÍ³£Á¿
+//ç”¨äºç¬¦å·è¡¨ä¸­ç±»å‹type,EXPVAL.type
+#define ID_FUN		   0	      // å‡½æ•°ç±»å‹
+#define ID_INT		   1		  // intç±»å‹
+#define ID_CHAR		   2		  // charç±»å‹

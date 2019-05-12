@@ -206,10 +206,16 @@ static int FoundRELOOP()
 
 static int STR2INT()
 {
-	int i,s=0;
-	for (i=0;i<tokenLen;i++)
+	int i=0,s=0,PlusOrMinus=1;
+	if(tokenStr[0]=='+')
+        i++;            //start calculate from the second char   
+	if(tokenStr[0]=='-'){
+		i++;
+		PlusOrMinus = -1;
+	};
+	for (;i<tokenLen;i++)
 		s=s*10+tokenStr[i]-'0';
-	return(s);
+	return(s * PlusOrMinus);
 }
 
 static int FoundKeyword()
