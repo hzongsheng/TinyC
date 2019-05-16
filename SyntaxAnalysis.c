@@ -36,7 +36,8 @@ static TERMINAL lookahead;
 static int curtoken_num;
 static char curtoken_str[MAXTOKENLEN];
 static IDTABLE *IDTHead=NULL;
-static int run_status=1;	//0锟斤拷锟斤拷锟斤拷执锟叫ｏ拷1:锟斤拷锟斤拷锟斤拷锟斤拷执锟叫ｏ拷2:锟斤拷锟斤拷锟斤拷前锟结构锟斤拷锟斤拷锟街达拷锟�
+static int run_status=1;	//0不执行，1正常执行，2跳过执行
+                          //在if-else中：3由break产生的不执行，4由continue产生的不执行
 static char printCharList[62][10];//锟绞凤拷锟斤拷锟斤拷锟斤拷锟斤拷锟节斤拷token锟斤拷应锟斤拷锟斤拷锟斤拷转锟斤拷为锟斤拷应锟斤拷锟街凤拷
 extern int row, col;
 
@@ -63,6 +64,8 @@ void initPrintCharList(){ //锟斤拷始锟斤拷printCharList锟斤拷锟斤拷
 	strcpy(printCharList[27]," =");
 	strcpy(printCharList[28]," '");
 	strcpy(printCharList[29]," \"");
+	strcpy(printCharList[30]," continue");
+	strcpy(printCharList[31]," break");
 	strcpy(printCharList[51]," &&");
 	strcpy(printCharList[52]," ||");
 	strcpy(printCharList[53]," !");
@@ -205,8 +208,8 @@ static char cast2char(EXPVAL exp)
 }
 
 static EXPVAL calculateExp(EXPVAL val1, int calop, EXPVAL val2){
-    int result1 = cast2int(val1);
-		int result = cast2int(val2);
+    int result = cast2int(val1);
+		int result1 = cast2int(val2);
     switch (calop)
 		{
 		case SYN_ADD: 
@@ -298,46 +301,89 @@ static int Prod_S()
 		#if defined(AnaTypeSyn)
 		printf("SYN: S-->if (B) {S} [else {S}] S\n");
 		#endif
+		int status_record = run_status;
+		int isExeIf , isExeElse ;
 		match(SYN_IF);
 		match(SYN_PAREN_L);
 		bval=Prod_B();
 		match(SYN_PAREN_R);
-		if (run_status==1 && bval==0) run_status=2;
-		match(SYN_BRACE_L);
+	  if(run_status == 1 && bval == 1)isExeIf = 1;
+		else isExeIf = -1;
+		if(run_status == 1 && bval == 0)isExeElse = 1;
+		else isExeElse = -1;
+		if(isExeIf == 1)run_status=1;
+		else run_status = -1;
+    match(SYN_BRACE_L);
 		Prod_S();
 		match(SYN_BRACE_R);
-		if (lookahead.token==SYN_ELSE)
+		if(lookahead.token==SYN_ELSE)
 		{
+			if(run_status != 0 && run_status != 2){
+		  	if(isExeElse == 1)run_status=1;
+			  else run_status=-1;
+			};
 			match(SYN_ELSE);
-			if (run_status==1) run_status=2;
-			else if (run_status==2) run_status=1;
 			match(SYN_BRACE_L);
 			Prod_S();
 			match(SYN_BRACE_R);
-			if (run_status==2) run_status=1;
-		}
+		};
+
+    if( run_status != 0 && run_status != 2)
+		  run_status=status_record;
 		Prod_S();
 	}
+	/*      WHILE         WHILE        WHILE             */
 	else if (lookahead.token==SYN_WHILE)
 	{   //SYN: S-->while(B) {S} S
 		#if defined(AnaTypeSyn)
 		printf("SYN: S-->while(B) {S} S\n");
 		#endif
-		match(SYN_WHILE);
-		file_index=ftell(sFile)-6;
+		/* record origin values */
+		int status_record = run_status;
+		int origin_row = row;
+		int origin_col = col - 1;
+		file_index=ftell(sFile) - 1;
+		match(SYN_WHILE); //change loc with last statement
 		match(SYN_PAREN_L);
 		bval=Prod_B();
 		match(SYN_PAREN_R);
-		if (run_status==1 && bval==0) run_status=2;
+		if (run_status==2)run_status=0; //elimilate amgiguous situation that status=2 cased by continue
+		if (run_status==1 && bval==0)run_status=0;// should't be executed, same value,but meaning is different  from last statement
 		match(SYN_BRACE_L);
-		Prod_S();
+	  Prod_S();
 		match(SYN_BRACE_R);
-		if (run_status==1)
-		{	fseek(sFile,file_index,SEEK_SET);
-			renewLex();
-		}
-		else if (run_status==2)
-			run_status=1;
+		while(run_status == 1 || run_status == 2){
+			run_status = 1;// bool expression need run_status equals to 1
+			fseek(sFile,file_index,SEEK_SET);//seek_set: head of file
+			renewLex();         //set prebuf equals to 0
+			lookahead.token = 60;
+			row = origin_row;
+			col = origin_col;
+      match(SYN_WHILE);
+			match(SYN_PAREN_L);
+			bval=Prod_B();
+			match(SYN_PAREN_R);
+			if (bval!=1)run_status=0;
+			match(SYN_BRACE_L);
+			Prod_S();
+			match(SYN_BRACE_R);
+			
+		};//end of while
+    run_status = status_record; // set status to its origin value
+		Prod_S();
+	}
+	else if(lookahead.token==SYN_CONTINUE)
+	{
+		match(SYN_CONTINUE);
+		match(SYN_SEMIC);
+		if(run_status == 1)run_status=2;
+		Prod_S();
+	}
+	else if(lookahead.token==SYN_BREAK)
+	{
+		match(SYN_BREAK);
+		match(SYN_SEMIC);
+		if(run_status == 1)run_status=0;
 		Prod_S();
 	}
 	else
@@ -551,7 +597,7 @@ static int Prod_TB1(int bval1)
 }
 
 static int Prod_FB()
-{//锟斤拷锟斤拷锟斤拷锟斤拷式
+{
 
 	int bval;
 	EXPVAL val1,val2;
@@ -671,6 +717,9 @@ static int Prod_FB()
 		}
 		else
 		{
+			#if defined(AnaTypeSyn)
+			printf("SYN: FB-->E\n");
+			#endif
 			if (run_status==1)
 				return(ival1!=0 ? 1 : 0);
 			else
@@ -812,16 +861,25 @@ static EXPVAL Prod_F()
 	else if(lookahead.token==SYN_PAREN_L)
 	{
 			#if defined(AnaTypeSyn)
-			printf("SYN: F-->(E)\n");
+			printf("SYN: F-->(B)\n");
 			#endif
 			match(SYN_PAREN_L);
-			val=Prod_E();
+			//change int type to EXPVAL
+			if(Prod_B() == 1){
+				val.type = ID_INT;
+				val.val.intval = 1;
+			}
+			else{
+				val.type = ID_INT;
+				val.val.intval = 0;
+			}
+
 			match(SYN_PAREN_R);
   }
 	else if (lookahead.token==SYN_LETTER)
 	{
 		#if defined(AnaTypeSyn)
-		printf("SYN: F-->(B)\n");
+		printf("SYN: F-->letter\n");
 		#endif
 		match(SYN_LETTER);
 		val.type=ID_CHAR;

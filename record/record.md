@@ -173,11 +173,27 @@ st->matain->installid->end
    >> show语句未能打印出变量值，表达式的type为一个随机数 
    * Prod_D 和 Prod_L 对建立ID表项后未添加type
 
-   
-   > 使得逻辑表达式参与到算术运算中
-   * 修改文法F --> id | num | (E)为：F --> id | num | (E) | (B)
-   * 通过修改此文法，可以同时引入两个新的特性：
-      * 布尔表达式可以通过 '()'表达更高的优先级，此后优先级顺序由低到高为'||', '&&', '()'
-      * 布尔表达式可以参与算术运算，通过判断将布尔表达式TRUE当作1，FALSE当作0，参与到算术运算
-   * 过程：
-      * 修改F的产生式为F --> id | num | letter | (E) |(F)，增加了对布尔表达式的支持。通过识别出"("后尝试用
+   > 逻辑表达式参与算术计算
+   * 修改文法，将F的产生式由F-->id|num|letter|(E) 改为 F-->id|num|letter|(B)
+   * 将Prod_F中 B 的返回值存入EXPVAL型变量val的intval中，产生式返回val
+   * 
+  
+   > 支持continue，break
+   >> if语句
+   * 修改constvar.h ，增加SYN_CONTINUE, SYN_BREAK
+   * 修改词法分析，关键字判断
+   * if语句需要达到的目标是两个:
+      1. 判断并决定是否执行if，else块
+      2. 使得continue，break语句产生的对run_status的影响可以传递，而其他的status改变最终需要回到入口时的状态
+   * 方法：
+      1. 在程序入口判断出if，else是否需要执行，将结果存入isExeIf，isExeElse中，在执行Prod_S函数前，置相应status为0，或者-1。以决定其中的语句是否执行。
+      2. 为了避免和break语句产生的对status影响相冲突，判断为不执行时选择的status值为-1，而不是0。最后为了回到入口状态的status，选择在入口记录status的值，以用于在程序出口除由continue和break引起的status状态的改变的恢复。
+   >> while语句
+   * while语句需要实现的功能为:
+      1. 结果成立继续执行，否则，退出
+      2. break语句执行后，其后的程序内语句均不执行，并结束循环
+      3. continue执行后，其后的程序内语句均不执行，但需要回到条件判断表达式是否成立，是则继续，否则退出
+   * 入口时程序执行的条件为status为1且bval为1，否则均不执行，为了避免与continue语句产生影响混淆，将入口status为2时赋值为0，status为1但bval为0时赋值为0，表示不执行
+   * 结构上为先执行一次while循环体的翻译执行，在判断是否继续重复执行，将重复执行单元放在一个循环中，进入循环条件为status为1或者2，由于入口便为2的情况已经被重新置为0，所以此循环体中status为2的原因只可能为由continue所造成的。重新判断bval，为0便置status为0，结束循环
+      
+   > 此法分析中case202 while语句死循环，怀疑为编译器问题，改变表达后问题解决

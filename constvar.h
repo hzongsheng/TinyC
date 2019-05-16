@@ -1,7 +1,7 @@
 
 
 //#define AnaTypeLex	1
-#define AnaTypeSyn	1
+//#define AnaTypeSyn	1
 #define MAXTOKENLEN	256
 
 //词法分析
@@ -76,6 +76,8 @@ static int LexTable[6][8]=
 #define SYN_SET		27		// =
 #define SYN_QUO     28      //'
 #define SYN_D_QUO   29      //"
+#define SYN_CONTINUE 30      //continue
+#define SYN_BREAK   31      // break
 #define SYN_AND		51		// &&
 #define SYN_OR		52		// ||
 #define SYN_NOT		53		// !

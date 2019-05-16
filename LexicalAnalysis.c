@@ -112,9 +112,16 @@ TERMINAL nextToken()
 					  }
 					  state=0; tokenLen=0;
 					  continue;
-			case 202: c=ReadAChar(sFile);
+			case 202: /*c=ReadAChar(sFile);
 					  while (!feof(sFile) && !( c=='*' && (d=ReadAChar(sFile))=='/' ) )
 						  c=d;
+					  */
+					  c=ReadAChar(sFile);
+					  d=ReadAChar(sFile);
+					  while(!feof(sFile) && !(( c=='*') && (d=='/'))){
+                          c=d;
+						  d=ReadAChar();
+					  };
 					  state=0; tokenLen=0;
 					  continue;
 			case 203: while ((c=ReadAChar(sFile))!='\n' && (!feof(sFile)));
@@ -228,6 +235,8 @@ static int FoundKeyword()
 	if (strcompare(tokenStr,"else")) return(SYN_ELSE);
 	if (strcompare(tokenStr,"while")) return(SYN_WHILE);
 	if (strcompare(tokenStr,"show")) return(SYN_SHOW);
+	if (strcompare(tokenStr,"continue")) return(SYN_CONTINUE);
+	if (strcompare(tokenStr,"break")) return(SYN_BREAK);
 	return(SYN_ID);
 }
 
